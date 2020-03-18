@@ -39,6 +39,7 @@ public class Schema implements Serializable {
     }
 
     public Attribute getAttribute(int i) {
+        //System.out.println("hi: " + i);
         return attset.get(i);
     }
 
