@@ -21,55 +21,115 @@ public class ConvertTxtToTbl {
             System.out.println("usage: java ConvertTxtToTbl <tablename> \n creats <tablename>.tbl files");
             System.exit(1);
         }
-        String tblname = args[0];
-        String mdfile = tblname + ".md";
-        String tblfile = tblname + ".tbl";
 
-        /** open the input and output streams **/
-        BufferedReader in = new BufferedReader(new FileReader(tblname + ".txt"));
-        ObjectOutputStream outtbl = new ObjectOutputStream(new FileOutputStream(tblfile));
+        if (args[0].compareTo("ALL") == 0) {
 
-        /** First Line is METADATA **/
-        int linenum = 0;
-        String line;
-        Schema schema = null;
-        try {
-            ObjectInputStream ins = new ObjectInputStream(new FileInputStream(mdfile));
-            schema = (Schema) ins.readObject();
-        } catch (ClassNotFoundException ce) {
-            System.out.println("class not found exception --- error in schema object file");
-            System.exit(1);
-        }
+            String[] tbls = {"BILL", "CART", "CUSTOMER", "CARTDETAILS"};
 
-        boolean flag = false;
-        StringTokenizer tokenizer;
-        while ((line = in.readLine()) != null) {
-            linenum++;
-            tokenizer = new StringTokenizer(line);
+            for (String s : tbls) {
+                String tblname = s;
+                String mdfile = tblname + ".md";
+                String tblfile = tblname + ".tbl";
 
-            ArrayList<Object> data = new ArrayList<>();
-            int attrIndex = 0;
+                /** open the input and output streams **/
+                BufferedReader in = new BufferedReader(new FileReader(tblname + ".txt"));
+                ObjectOutputStream outtbl = new ObjectOutputStream(new FileOutputStream(tblfile));
 
-            while (tokenizer.hasMoreElements()) {
-                String dataElement = tokenizer.nextToken();
-                int datatype = schema.typeOf(attrIndex);
-                if (datatype == Attribute.INT) {
-                    data.add(Integer.valueOf(dataElement));
-                } else if (datatype == Attribute.REAL) {
-                    data.add(Float.valueOf(dataElement));
-                } else if (datatype == Attribute.STRING) {
-                    data.add(dataElement);
-                } else {
-                    System.err.println("Invalid data type");
+                /** First Line is METADATA **/
+                int linenum = 0;
+                String line;
+                Schema schema = null;
+                try {
+                    ObjectInputStream ins = new ObjectInputStream(new FileInputStream(mdfile));
+                    schema = (Schema) ins.readObject();
+                } catch (ClassNotFoundException ce) {
+                    System.out.println("class not found exception --- error in schema object file");
                     System.exit(1);
                 }
-                attrIndex++;
+
+                boolean flag = false;
+                StringTokenizer tokenizer;
+                while ((line = in.readLine()) != null) {
+                    linenum++;
+                    tokenizer = new StringTokenizer(line);
+
+                    ArrayList<Object> data = new ArrayList<>();
+                    int attrIndex = 0;
+
+                    while (tokenizer.hasMoreElements()) {
+                        String dataElement = tokenizer.nextToken();
+                        int datatype = schema.typeOf(attrIndex);
+                        if (datatype == Attribute.INT) {
+                            data.add(Integer.valueOf(dataElement));
+                        } else if (datatype == Attribute.REAL) {
+                            data.add(Float.valueOf(dataElement));
+                        } else if (datatype == Attribute.STRING) {
+                            data.add(dataElement);
+                        } else {
+                            System.err.println("Invalid data type");
+                            System.exit(1);
+                        }
+                        attrIndex++;
+                    }
+                    Tuple tuple = new Tuple(data);
+                    outtbl.writeObject(tuple);
+                }
+                outtbl.close();
+                in.close();
             }
-            Tuple tuple = new Tuple(data);
-            outtbl.writeObject(tuple);
+
         }
-        outtbl.close();
-        in.close();
+        else {
+            String tblname = args[0];
+            String mdfile = tblname + ".md";
+            String tblfile = tblname + ".tbl";
+
+            /** open the input and output streams **/
+            BufferedReader in = new BufferedReader(new FileReader(tblname + ".txt"));
+            ObjectOutputStream outtbl = new ObjectOutputStream(new FileOutputStream(tblfile));
+
+            /** First Line is METADATA **/
+            int linenum = 0;
+            String line;
+            Schema schema = null;
+            try {
+                ObjectInputStream ins = new ObjectInputStream(new FileInputStream(mdfile));
+                schema = (Schema) ins.readObject();
+            } catch (ClassNotFoundException ce) {
+                System.out.println("class not found exception --- error in schema object file");
+                System.exit(1);
+            }
+
+            boolean flag = false;
+            StringTokenizer tokenizer;
+            while ((line = in.readLine()) != null) {
+                linenum++;
+                tokenizer = new StringTokenizer(line);
+
+                ArrayList<Object> data = new ArrayList<>();
+                int attrIndex = 0;
+
+                while (tokenizer.hasMoreElements()) {
+                    String dataElement = tokenizer.nextToken();
+                    int datatype = schema.typeOf(attrIndex);
+                    if (datatype == Attribute.INT) {
+                        data.add(Integer.valueOf(dataElement));
+                    } else if (datatype == Attribute.REAL) {
+                        data.add(Float.valueOf(dataElement));
+                    } else if (datatype == Attribute.STRING) {
+                        data.add(dataElement);
+                    } else {
+                        System.err.println("Invalid data type");
+                        System.exit(1);
+                    }
+                    attrIndex++;
+                }
+                Tuple tuple = new Tuple(data);
+                outtbl.writeObject(tuple);
+            }
+            outtbl.close();
+            in.close();
+        }
     }
 
 }
