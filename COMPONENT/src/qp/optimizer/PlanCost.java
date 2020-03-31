@@ -141,7 +141,11 @@ public class PlanCost {
 
         switch (joinType) {
             case JoinType.NESTEDJOIN:
-                joincost = leftpages * rightpages;
+                joincost = leftpages * rightpages; //wrong formula used to count cost
+                break;
+            case JoinType.BLOCKNESTED:
+                long iterCount = ((long) Math.ceil(1.0 * Math.min(rightpages, leftpages) / (numbuff-2)));
+                joincost = iterCount * Math.max(leftpages, rightpages);
                 break;
             default:
                 System.out.println("join type is not supported");
