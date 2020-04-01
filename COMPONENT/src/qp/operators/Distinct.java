@@ -61,11 +61,7 @@ public class Distinct extends Operator {
     }
 
 
-    /**
-     * During open finds the index of the join attributes
-     * * Materializes the right hand side into a file
-     * * Opens the connections
-     **/
+
     public boolean open() {
         return true;
     }
