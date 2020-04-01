@@ -75,6 +75,13 @@ public class RandomInitialPlan {
     }
 
     /**
+     * Create Distinct Operator
+     **/
+    public void createDistinctOp() {
+        // ToDo
+    }
+
+    /**
      * Create Scan Operator for each of the table
      * * mentioned in from list
      **/

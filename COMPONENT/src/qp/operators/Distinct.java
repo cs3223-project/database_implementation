@@ -12,6 +12,7 @@ import java.util.List;
 
 public class Distinct extends Operator {
 
+    Operator base;
     static int filenum = 0;         // To get unique filenum for this operation
     int batchsize;                  // Number of tuples per out batch
     int blockSize;
@@ -47,6 +48,7 @@ public class Distinct extends Operator {
 
     public Distinct(Operator base, int type) {
         super(type);
+        this.base = base;
     }
 
     //Setter and Getter
@@ -77,12 +79,12 @@ public class Distinct extends Operator {
         return batch;
     }
 
-    /**
-     * Close the operator
-     */
-    public boolean close() {
-        File f = new File(rfname);
-        f.delete();
-        return true;
+    public Operator getBase() {
+        return base;
     }
+
+    public void setBase(Operator base) {
+        this.base = base;
+    }
+
 }
