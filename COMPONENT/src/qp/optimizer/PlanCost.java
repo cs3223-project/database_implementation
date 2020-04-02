@@ -76,9 +76,20 @@ public class PlanCost {
             return getStatistics((Project) node);
         } else if (node.getOpType() == OpType.SCAN) {
             return getStatistics((Scan) node);
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            return getStatistics((Distinct) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
+        return 0;
+    }
+
+    /**
+     * Calculates statistics and cost of Distinct operation
+     **/
+    protected long getStatistics(Distinct node) {
+        // ToDo
+
         return 0;
     }
 
