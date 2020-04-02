@@ -5,6 +5,7 @@
 package qp.optimizer;
 
 import qp.operators.*;
+import qp.operators.BlockNestedLoop;
 import qp.utils.Attribute;
 import qp.utils.Condition;
 import qp.utils.RandNumb;
@@ -56,6 +57,7 @@ public class RandomOptimizer {
                     nj.setNumBuff(numbuff);
                     return nj;
                 case JoinType.BLOCKNESTED:
+                    //BlockNestedLoop bnj = new BlockNestedLoop((Join) node);
                     BlockNestedLoop bnj = new BlockNestedLoop((Join) node);
                     bnj.setLeft(left);
                     bnj.setRight(right);
