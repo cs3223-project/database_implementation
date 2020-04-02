@@ -16,6 +16,7 @@ public class Distinct extends Operator {
     static int filenum = 0;         // To get unique filenum for this operation
     int batchsize;                  // Number of tuples per out batch
     int blockSize;
+    int count = 0;
     int leftindex;                  // Indices of the join attributes in left table
     int rightindex;                 // Indices of the join attributes in right table
     String rfname;                  // The file name where the right table is materialized
@@ -63,7 +64,11 @@ public class Distinct extends Operator {
 
 
     public boolean open() {
-        return true;
+        /** set number of tuples per batch **/
+        int tuplesize = schema.getTupleSize();
+        batchsize = Batch.getPageSize() / tuplesize;
+
+        return base.open();
     }
 
     /**
@@ -71,8 +76,64 @@ public class Distinct extends Operator {
      * * And returns a page of output tuples
      **/
     public Batch next() {
-        Batch batch = null;
-        return batch;
+        Batch inbatch = base.next();
+        count = count + 1;
+
+        if (inbatch == null) {
+            return null;
+        }
+
+        Batch outbatch = new Batch(batchsize);
+        for (int i = 0; i < inbatch.size(); i++) {
+            outbatch.add(inbatch.get(i));
+            for (int j = 0; j < outbatch.size(); j++) {
+                Tuple outbatchTup = outbatch.get(j);
+                Tuple inbatchTup = inbatch.get(i);
+                if (outbatchTup.data().equals(inbatchTup.data())) {
+                    outbatch.remove(outbatch.size() - 1);
+                    break;
+                }
+            }
+        }
+
+        base.open();
+
+        Batch newInBatch = base.next();
+        int newCount = 0;
+
+        while (newInBatch != null) {
+            if (newCount > count - 1) {
+                for (int i = 0; i < outbatch.size(); i++) {
+                    boolean hasDuplicate = false;
+                    for (int j = 0; j < newInBatch.size(); j++) {
+                        Tuple newOutBatchTup = outbatch.get(i);
+                        Tuple newInBatchTup = newInBatch.get(j);
+                        if (newOutBatchTup.data().equals(newInBatchTup.data())) {
+                            outbatch.remove(outbatch.indexOf(newOutBatchTup));
+                            hasDuplicate = true;
+                            break;
+                        }
+                    }
+                    if (hasDuplicate) {
+                        i--;
+                    }
+                }
+            }
+            newInBatch = base.next();
+            newCount++;
+        }
+
+        base.open();
+        newInBatch = base.next();
+
+        newCount = 0;
+
+        while (newCount < count - 1) {
+            newInBatch = base.next();
+            newCount++;
+        }
+
+        return outbatch;
     }
 
     public Operator getBase() {
