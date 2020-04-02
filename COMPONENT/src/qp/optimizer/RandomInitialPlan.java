@@ -69,6 +69,7 @@ public class RandomInitialPlan {
         if (sqlquery.isDistinct()) {
             // ToDo
             // Create distinctOp
+            createDistinctOp();
         }
 
         return root;
@@ -79,6 +80,9 @@ public class RandomInitialPlan {
      **/
     public void createDistinctOp() {
         // ToDo
+        Operator base = root;
+        root = new Distinct(base, OpType.DISTINCT);
+        root.setSchema(base.getSchema());
     }
 
     /**

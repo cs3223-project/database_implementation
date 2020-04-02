@@ -76,24 +76,27 @@ public class Distinct extends Operator {
      * * And returns a page of output tuples
      **/
     public Batch next() {
+
         Batch inbatch = base.next();
-        count = count + 1;
+        count++;
 
         if (inbatch == null) {
             return null;
         }
 
         Batch outbatch = new Batch(batchsize);
-        for (int i = 0; i < inbatch.size(); i++) {
-            outbatch.add(inbatch.get(i));
-            for (int j = 0; j < outbatch.size(); j++) {
+        int curr = 0;
+        while (curr < inbatch.size()) {
+            outbatch.add(inbatch.get(curr));
+            for (int j = 0; j < outbatch.size() - 1; j++) {
                 Tuple outbatchTup = outbatch.get(j);
-                Tuple inbatchTup = inbatch.get(i);
+                Tuple inbatchTup = inbatch.get(curr);
                 if (outbatchTup.data().equals(inbatchTup.data())) {
                     outbatch.remove(outbatch.size() - 1);
                     break;
                 }
             }
+            curr++;
         }
 
         base.open();
@@ -124,11 +127,8 @@ public class Distinct extends Operator {
         }
 
         base.open();
-        newInBatch = base.next();
-
         newCount = 0;
-
-        while (newCount < count - 1) {
+        while (newCount < count) {
             newInBatch = base.next();
             newCount++;
         }
