@@ -78,8 +78,11 @@ public class RandomOptimizer {
             Operator base = makeExecPlan(((Distinct) node).getBase());
             ((Distinct) node).setBase(base);
             return node;
-        }
-        else {
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            Operator base = makeExecPlan(((OrderBy) node).getBase());
+            ((OrderBy) node).setBase(base);
+            return node;
+        } else {
             return node;
         }
     }
@@ -383,7 +386,7 @@ public class RandomOptimizer {
     }
 
     /**
-     * Modifies the schema of operators which are modified due to selecing an alternative neighbor plan
+     * Modifies the schema of operators which are modified due to selecting an alternative neighbor plan
      **/
     private void modifySchema(Operator node) {
         if (node.getOpType() == OpType.JOIN) {

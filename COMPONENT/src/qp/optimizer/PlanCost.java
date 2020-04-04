@@ -63,7 +63,6 @@ public class PlanCost {
         return numtuple;
     }
 
-
     /**
      * Returns number of tuples in the root
      **/
@@ -78,9 +77,16 @@ public class PlanCost {
             return getStatistics((Scan) node);
         } else if (node.getOpType() == OpType.DISTINCT) {
             return getStatistics((Distinct) node);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return getStatistics((OrderBy) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
+        return 0;
+    }
+
+    private long getStatistics(OrderBy node) {
+        // ToDo
         return 0;
     }
 
@@ -283,14 +289,3 @@ public class PlanCost {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-

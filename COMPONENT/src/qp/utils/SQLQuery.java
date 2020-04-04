@@ -104,9 +104,13 @@ public class SQLQuery {
         return groupbyList;
     }
 
-    public void setOrderByList(ArrayList<Attribute> list) { orderbyList = list; }
+    public void setOrderByList(ArrayList<Attribute> list) {
+        orderbyList = list;
+    }
 
-    public ArrayList<Attribute> getOrderByList() { return orderbyList; }
+    public ArrayList<Attribute> getOrderByList() {
+        return orderbyList;
+    }
 
     public int getNumJoin() {
         if (joinList == null)
