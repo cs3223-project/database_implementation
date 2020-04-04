@@ -89,8 +89,9 @@ public class PlanCost {
      **/
     protected long getStatistics(Distinct node) {
         // ToDo
-
-        return 0;
+        long tuples = calculateCost(node.getBase());
+        cost = 3 * tuples;
+        return calculateCost(node.getBase());
     }
 
     /**
@@ -152,7 +153,7 @@ public class PlanCost {
 
         switch (joinType) {
             case JoinType.NESTEDJOIN:
-                joincost = leftpages * rightpages; //wrong formula used to count cost
+                joincost = leftpages + (leftpages * rightpages); //Corrected formula
                 break;
             case JoinType.BLOCKNESTED:
                 long iterCount = ((long) Math.ceil(1.0 * Math.min(rightpages, leftpages) / (numbuff-2)));
