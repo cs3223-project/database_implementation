@@ -113,6 +113,9 @@ public class OrderBy extends Operator {
                 initTupleSize += current.size();
                 toRun.add(current);
                 current = base.next();
+                if (current == null) {
+                    break;
+                }
             }
             // processing the batches to sorted runs
             List<Batch> sortedRunBatch = createSortedRun(toRun);
@@ -173,10 +176,11 @@ public class OrderBy extends Operator {
         try {
             Batch batch = (Batch) objInputStream.readObject();
             return batch;
-        } catch (IOException e) {
+        } catch (EOFException e) {
+            return null;
+        } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            assert false;
         }
         return null;
     }

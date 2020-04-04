@@ -57,23 +57,21 @@ public class RandomInitialPlan {
             System.exit(1);
         }
 
-        if (sqlquery.getOrderByList().size() > 0) {
-            createOrderByOp();
-            System.out.println("root is " + root.getOpType());
-        }
-
         tab_op_hash = new HashMap<>();
         createScanOp();
         createSelectOp();
+        
         if (numJoin != 0) {
             createJoinOp();
         }
         createProjectOp();
 
         if (sqlquery.isDistinct()) {
-            // ToDo
-            // Create distinctOp
             createDistinctOp();
+        }
+
+        if (sqlquery.getOrderByList().size() > 0) {
+            createOrderByOp();
         }
 
         return root;
@@ -216,7 +214,9 @@ public class RandomInitialPlan {
             OrderType ot = new OrderType(a, OrderType.Order.ASC); // default is asc
             orderTypeList.add(ot);
         }
+        sqlquery.setOrderByList(orderbylist);
         root = new OrderBy(base, orderTypeList, 30);
+        root.setSchema(base.getSchema());
     }
 
     private void modifyHashtable(Operator old, Operator newop) {
