@@ -4,6 +4,7 @@ import qp.optimizer.BufferManager;
 import qp.utils.Attribute;
 import qp.utils.Batch;
 import qp.utils.Condition;
+import qp.utils.Schema;
 import qp.utils.Tuple;
 
 import java.io.*;
@@ -113,6 +114,7 @@ public class Distinct extends Operator {
                         Tuple newInBatchTup = newInBatch.get(j);
                         if (newOutBatchTup.data().equals(newInBatchTup.data())) {
                             outbatch.remove(outbatch.indexOf(newOutBatchTup));
+                            System.out.println("removing duplicate");
                             hasDuplicate = true;
                             break;
                         }
@@ -142,6 +144,14 @@ public class Distinct extends Operator {
 
     public void setBase(Operator base) {
         this.base = base;
+    }
+
+    public Object clone() {
+        Operator newbase = (Operator) base.clone();
+//        Scan newscan = new Scan(newbase, optype);
+        Distinct newDist = new Distinct(newbase, optype);
+        newDist.setSchema((Schema) schema.clone());
+        return newDist;
     }
 
 }
