@@ -12,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.List;
 
 public class RandomInitialPlan {
 
@@ -22,6 +23,8 @@ public class RandomInitialPlan {
     ArrayList<Condition> selectionlist;   // List of select conditons
     ArrayList<Condition> joinlist;        // List of join conditions
     ArrayList<Attribute> groupbylist;
+    ArrayList<Attribute> orderbylist;
+
     int numJoin;            // Number of joins in this query
     HashMap<String, Operator> tab_op_hash;  // Table name to the Operator
     Operator root;          // Root of the query plan tree
@@ -33,6 +36,7 @@ public class RandomInitialPlan {
         selectionlist = sqlquery.getSelectionList();
         joinlist = sqlquery.getJoinList();
         groupbylist = sqlquery.getGroupByList();
+        orderbylist = sqlquery.getOrderByList();
         numJoin = joinlist.size();
     }
 
@@ -54,8 +58,8 @@ public class RandomInitialPlan {
         }
 
         if (sqlquery.getOrderByList().size() > 0) {
-            System.err.println("Orderby is not implemented.");
-            System.exit(1);
+            createOrderByOp();
+            System.out.println("root is " + root.getOpType());
         }
 
         tab_op_hash = new HashMap<>();
@@ -202,6 +206,17 @@ public class RandomInitialPlan {
             Schema newSchema = base.getSchema().subSchema(projectlist);
             root.setSchema(newSchema);
         }
+    }
+
+    public void createOrderByOp() {
+        assert orderbylist != null: "There is no attributes to order by.";
+        Operator base = root;
+        List<OrderType> orderTypeList = new ArrayList<>();
+        for (Attribute a : orderbylist) {
+            OrderType ot = new OrderType(a, OrderType.Order.ASC); // default is asc
+            orderTypeList.add(ot);
+        }
+        root = new OrderBy(base, orderTypeList, 30);
     }
 
     private void modifyHashtable(Operator old, Operator newop) {

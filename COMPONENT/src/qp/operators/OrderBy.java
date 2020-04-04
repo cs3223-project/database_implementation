@@ -33,6 +33,14 @@ public class OrderBy extends Operator {
         this.buffers = buffers;
     }
 
+    public Operator getBase() {
+        return base;
+    }
+
+    public void setBase(Operator base) {
+        this.base = base;
+    }
+
     /**
      * Opens the OrderBy operator and performs the necessary initialisation,
      * and the external sorting algorithm for the ordering by specified OrderTypes.
