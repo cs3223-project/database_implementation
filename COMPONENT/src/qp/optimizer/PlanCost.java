@@ -165,6 +165,9 @@ public class PlanCost {
                 long iterCount = ((long) Math.ceil(1.0 * Math.min(rightpages, leftpages) / (numbuff-2)));
                 joincost = iterCount * Math.max(leftpages, rightpages);
                 break;
+            case JoinType.HASHJOIN:
+                joincost = 3 * leftpages + 3 * rightpages;
+                break;
             default:
                 System.out.println("join type is not supported");
                 return 0;

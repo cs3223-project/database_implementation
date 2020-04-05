@@ -63,6 +63,12 @@ public class RandomOptimizer {
                     bnj.setRight(right);
                     bnj.setNumBuff(numbuff);
                     return bnj;
+                case JoinType.HASHJOIN:
+                    HashJoin hashJoin = new HashJoin((Join) node);
+                    hashJoin.setLeft(left);
+                    hashJoin.setRight(right);
+                    hashJoin.setNumBuff(numbuff);
+                    return hashJoin;
                 default:
                     return node;
             }
