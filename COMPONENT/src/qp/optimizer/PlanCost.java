@@ -63,7 +63,6 @@ public class PlanCost {
         return numtuple;
     }
 
-
     /**
      * Returns number of tuples in the root
      **/
@@ -78,9 +77,16 @@ public class PlanCost {
             return getStatistics((Scan) node);
         } else if (node.getOpType() == OpType.DISTINCT) {
             return getStatistics((Distinct) node);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return getStatistics((OrderBy) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
+        return 0;
+    }
+
+    private long getStatistics(OrderBy node) {
+        // ToDo
         return 0;
     }
 
@@ -158,6 +164,9 @@ public class PlanCost {
             case JoinType.BLOCKNESTED:
                 long iterCount = ((long) Math.ceil(1.0 * Math.min(rightpages, leftpages) / (numbuff-2)));
                 joincost = iterCount * Math.max(leftpages, rightpages);
+                break;
+            case JoinType.HASHJOIN:
+                joincost = 3 * leftpages + 3 * rightpages;
                 break;
             default:
                 System.out.println("join type is not supported");
@@ -284,14 +293,3 @@ public class PlanCost {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
