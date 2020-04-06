@@ -87,7 +87,12 @@ public class PlanCost {
 
     private long getStatistics(OrderBy node) {
         // ToDo
-        return 0;
+        int numBuffs = node.getBuffers();
+        int numPages = node.getPages();
+        int numPasses = 1 + (int) Math.ceil(Math.log(Math.ceil(numPages / (1.0 * numBuffs))) / Math.log(numPages -1));
+        cost += 2 * numPages * numPasses;
+
+        return calculateCost(node.getBase());
     }
 
     /**
