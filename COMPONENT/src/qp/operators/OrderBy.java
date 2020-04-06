@@ -15,7 +15,7 @@ public class OrderBy extends Operator {
 
     private Operator base;
     private List<OrderType> orderByTypeList;
-    private int buffers;
+    private int buffers = 0;
     private int tupleByteSize;
     private int batchRecordSize; // per page
     private Comparator<Tuple> tupleComparator;
@@ -24,6 +24,7 @@ public class OrderBy extends Operator {
     private int runNo; // keep track of the number of sorted runs produced
     private int initTupleSize;
     private int processedTuples;
+    private int pages = 0;
 
     private ObjectInputStream inputStreamIter;
 
@@ -40,6 +41,16 @@ public class OrderBy extends Operator {
 
     public void setBase(Operator base) {
         this.base = base;
+    }
+
+    public int getBuffers() {
+        assert buffers != 0;
+        return buffers;
+    }
+
+    public int getPages() {
+        assert pages != 0;
+        return pages;
     }
 
     /**
@@ -132,6 +143,8 @@ public class OrderBy extends Operator {
             File sortedRunFile = writeRunToFile(sortedRunBatch);
             sortedRuns.add(sortedRunFile);
         }
+
+        pages = sortedRuns.size() * buffers;
     }
 
     /**
@@ -335,7 +348,7 @@ public class OrderBy extends Operator {
         try {
             fileNo++;
             //int numTuples = 0;
-            String fileName = "SortedRun-" + runNo + "-" + fileNo;
+            String fileName = "tempSortedRun-" + runNo + "-" + fileNo;
             sortedRunFile = new File(fileName);
             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(sortedRunFile));
 
