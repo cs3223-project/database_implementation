@@ -154,6 +154,7 @@ public class RandomOptimizer {
                 while (flag) {  // flag = false when local minimum is reached
                     System.out.println("---------------while--------");
                     Operator initPlanCopy = (Operator) initPlan.clone();
+                    System.out.println("operator of initPlan: " + initPlanCopy.getOpType());
                     minNeighbor = getNeighbor(initPlanCopy);
 
                     System.out.println("--------------------------neighbor---------------");
@@ -386,6 +387,8 @@ public class RandomOptimizer {
             return findNodeAt(((Project) node).getBase(), joinNum);
         } else if (node.getOpType() == OpType.DISTINCT) {
             return findNodeAt(((Distinct) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return findNodeAt(((OrderBy) node).getBase(), joinNum);
         } else {
             return null;
         }
