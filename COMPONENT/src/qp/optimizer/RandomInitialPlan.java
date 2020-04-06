@@ -215,7 +215,7 @@ public class RandomInitialPlan {
             orderTypeList.add(ot);
         }
         sqlquery.setOrderByList(orderbylist);
-        root = new OrderBy(base, orderTypeList, 30);
+        root = new OrderBy(base, orderTypeList, sqlquery.getNumBuffers());
         root.setSchema(base.getSchema());
     }
 

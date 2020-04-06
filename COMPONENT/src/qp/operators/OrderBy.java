@@ -1,6 +1,7 @@
 package qp.operators;
 
 import qp.utils.Batch;
+import qp.utils.Schema;
 import qp.utils.Tuple;
 
 import java.io.*;
@@ -26,11 +27,11 @@ public class OrderBy extends Operator {
 
     private ObjectInputStream inputStreamIter;
 
-    public OrderBy(Operator base, List<OrderType> orderTypes, int buffers) {
+    public OrderBy(Operator base, List<OrderType> orderTypes, int numBuffers) {
         super(OpType.ORDERBY);
         this.base = base;
         this.orderByTypeList = orderTypes;
-        this.buffers = buffers;
+        this.buffers = numBuffers;
     }
 
     public Operator getBase() {
@@ -94,10 +95,18 @@ public class OrderBy extends Operator {
         refreshRuns(sortedRuns);
         try {
             inputStreamIter.close();
+            System.out.println("-------- OrderBy operator close --------");
         } catch (IOException e) {
             e.printStackTrace();
         }
         return super.close();
+    }
+
+    public Object clone() {
+        Operator clone = (Operator) base.clone();
+        OrderBy cloneOB = new OrderBy(clone, orderByTypeList, buffers);
+        cloneOB.setSchema((Schema) schema.clone());
+        return cloneOB;
     }
 
     /**
@@ -107,7 +116,7 @@ public class OrderBy extends Operator {
         initTupleSize = 0;
         Batch current = base.next();
 
-        while (current != null) {
+        if (current != null) {
             List<Batch> toRun = new ArrayList<>();
             for (int i = 0; i < buffers; i++) {
                 initTupleSize += current.size();
@@ -117,12 +126,12 @@ public class OrderBy extends Operator {
                     break;
                 }
             }
+
             // processing the batches to sorted runs
             List<Batch> sortedRunBatch = createSortedRun(toRun);
             File sortedRunFile = writeRunToFile(sortedRunBatch);
             sortedRuns.add(sortedRunFile);
         }
-
     }
 
     /**
@@ -167,20 +176,16 @@ public class OrderBy extends Operator {
         }
     }
 
-
-
     /**
      * Read Batch from ObjectInputStream.
      */
     private Batch readBatch(ObjectInputStream objInputStream) {
         try {
-            Batch batch = (Batch) objInputStream.readObject();
-            return batch;
+            return (Batch) objInputStream.readObject();
         } catch (EOFException e) {
             return null;
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
-            assert false;
         }
         return null;
     }

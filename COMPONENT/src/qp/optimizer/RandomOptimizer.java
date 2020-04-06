@@ -34,8 +34,9 @@ public class RandomOptimizer {
      * constructor
      **/
 
-    public RandomOptimizer(SQLQuery sqlquery) {
+    public RandomOptimizer(SQLQuery sqlquery, int numBuffers) {
         this.sqlquery = sqlquery;
+        this.sqlquery.setNumBuffers(numBuffers);
     }
 
     /**
@@ -386,6 +387,8 @@ public class RandomOptimizer {
             return findNodeAt(((Project) node).getBase(), joinNum);
         } else if (node.getOpType() == OpType.DISTINCT) {
             return findNodeAt(((Distinct) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return findNodeAt(((OrderBy) node).getBase(), joinNum);
         } else {
             return null;
         }
