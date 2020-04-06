@@ -33,6 +33,19 @@ public class QueryMain {
         Operator root = getQueryPlan(sqlquery);
         printFinalPlan(root, args, in);
         executeQuery(root, args[1]);
+        deleteAllTempFiles();
+    }
+
+    /**
+     * Delete temp files
+     **/
+    private static void deleteAllTempFiles(){
+        File dirr = new File(".");
+        File[] files = dirr.listFiles();
+        for(int i = 0; i<files.length; i++) {
+            if (files[i].getName().contains("temp"))
+                files[i].delete();
+        }
     }
 
     /**

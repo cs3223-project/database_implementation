@@ -18,6 +18,7 @@ public class BlockNestedLoop extends Join {
     int leftindex;                  // Indices of the join attributes in left table
     int rightindex;                 // Indices of the join attributes in right table
     String rfname;                  // The file name where the right table is materialized
+    String prefix = "BNJtemp-";     // The start name of file to be deleted
     Batch outbatch;                 // Buffer page for output
     List<Batch> leftbatch;          // Buffer page for left input stream
     List<Tuple> lTuplesInCurrBlk;   //Tuples inside block
@@ -243,6 +244,12 @@ public class BlockNestedLoop extends Join {
      * Close the operator
      */
     public boolean close() {
+        /*File dirr = new File(".");
+        File[] files = dirr.listFiles();
+        for(int i = 0; i<files.length; i++) {
+            if (files[i].getName().startsWith(prefix))
+                files[i].delete();
+        }*/
         File f = new File(rfname);
         f.delete();
         return true;

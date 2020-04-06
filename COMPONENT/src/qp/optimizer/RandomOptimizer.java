@@ -414,6 +414,10 @@ public class RandomOptimizer {
             Operator base = ((Distinct) node).getBase();
             modifySchema(base);
             node.setSchema(base.getSchema());
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            Operator base = ((OrderBy) node).getBase();
+            modifySchema(base);
+            node.setSchema(base.getSchema());
         }
     }
 }
