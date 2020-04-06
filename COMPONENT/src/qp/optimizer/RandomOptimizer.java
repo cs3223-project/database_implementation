@@ -34,8 +34,9 @@ public class RandomOptimizer {
      * constructor
      **/
 
-    public RandomOptimizer(SQLQuery sqlquery) {
+    public RandomOptimizer(SQLQuery sqlquery, int numBuffers) {
         this.sqlquery = sqlquery;
+        this.sqlquery.setNumBuffers(numBuffers);
     }
 
     /**
@@ -154,7 +155,6 @@ public class RandomOptimizer {
                 while (flag) {  // flag = false when local minimum is reached
                     System.out.println("---------------while--------");
                     Operator initPlanCopy = (Operator) initPlan.clone();
-                    System.out.println("operator of initPlan: " + initPlanCopy.getOpType());
                     minNeighbor = getNeighbor(initPlanCopy);
 
                     System.out.println("--------------------------neighbor---------------");

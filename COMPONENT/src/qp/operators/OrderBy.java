@@ -27,11 +27,11 @@ public class OrderBy extends Operator {
 
     private ObjectInputStream inputStreamIter;
 
-    public OrderBy(Operator base, List<OrderType> orderTypes, int buffers) {
+    public OrderBy(Operator base, List<OrderType> orderTypes, int numBuffers) {
         super(OpType.ORDERBY);
         this.base = base;
         this.orderByTypeList = orderTypes;
-        this.buffers = buffers;
+        this.buffers = numBuffers;
     }
 
     public Operator getBase() {
