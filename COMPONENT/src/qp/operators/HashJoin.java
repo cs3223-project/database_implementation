@@ -35,7 +35,7 @@ public class HashJoin extends Join {
     List<String> rightPartitions; // File names of the right tables
     ObjectInputStream leftInput;
     ObjectInputStream rightInput;
-    String filePrefix = "tmphashfile";
+    String filePrefix = "temphashfile";
 
     Hashtable<Integer, LinkedList<Tuple>> innerHashTable; // Hashtable for left partition
     LinkedList<Tuple> linkedList;
