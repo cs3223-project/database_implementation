@@ -114,7 +114,7 @@ public class Distinct extends Operator {
                         Tuple newInBatchTup = newInBatch.get(j);
                         if (newOutBatchTup.data().equals(newInBatchTup.data())) {
                             outbatch.remove(outbatch.indexOf(newOutBatchTup));
-                            System.out.println("removing duplicate");
+                            // System.out.println("removing duplicate");
                             hasDuplicate = true;
                             break;
                         }
