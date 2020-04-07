@@ -30,22 +30,6 @@ public class BlockNestedLoop extends Join {
     boolean eosl;                   // Whether end of stream (left table) is reached
     boolean eosr;                   // Whether end of stream (right table) is reached
 
-    /*static int filenum = 0;         // To get unique filenum for this operation
-    int blockSize;
-    int batchsize;                  // Number of tuples per out batch
-    ArrayList<Integer> leftindex;   // Indices of the join attributes in left table
-    ArrayList<Integer> rightindex;  // Indices of the join attributes in right table
-    String rfname;                  // The file name where the right table is materialized
-    Batch outbatch;                 // Buffer page for output
-    Batch leftbatch;                // Buffer page for left input stream
-    Batch rightbatch;               // Buffer page for right input stream
-    ObjectInputStream in;           // File pointer to the right hand materialized file
-
-    int lcurs;                      // Cursor for left side buffer
-    int rcurs;                      // Cursor for right side buffer
-    boolean eosl;                   // Whether end of stream (left table) is reached
-    boolean eosr;                   // Whether end of stream (right table) is reached*/
-
     public BlockNestedLoop(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getCondition(), jn.getOpType());
         schema = jn.getSchema();
@@ -63,17 +47,6 @@ public class BlockNestedLoop extends Join {
         return blockSize;
     }
 
-    /*
-        for each block br in Br do
-            for each block bs in Bs do
-                for each tuple tr in Tr do
-                    for each tuple ts in Ts do
-                        compare(tr and ts) if they satisfied the condition add them in the result of the join
-                    end
-                end
-            end
-        end
-    */
     /**
      * During open finds the index of the join attributes
      * * Materializes the right hand side into a file
@@ -85,8 +58,6 @@ public class BlockNestedLoop extends Join {
         batchsize = Batch.getPageSize() / tuplesize;
 
         /** find indices attributes of join conditions **/
-        //leftindex = new ArrayList<>();
-        //rightindex = new ArrayList<>();
         for (Condition con : conditionList) {
             Attribute leftattr = con.getLhs();
             Attribute rightattr = (Attribute) con.getRhs();
@@ -115,7 +86,7 @@ public class BlockNestedLoop extends Join {
              ** into a file
              **/
             filenum++;
-            rfname = "BNJtemp-" + String.valueOf(filenum);
+            rfname = "BNJtemp-" + filenum;
             try {
                 ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(rfname));
                 while ((rightpage = right.next()) != null) {
@@ -151,12 +122,8 @@ public class BlockNestedLoop extends Join {
         while (!outbatch.isFull()) {
             if (lcurs == 0 && eosr == true) {
                 /** new left block is to be fetched**/
-                //leftbatch = (Batch) left.next();
                 leftbatch = new ArrayList<>();
-                /*if (leftbatch == null) {
-                    eosl = true;
-                    return outbatch;
-                }*/
+                
                 for(i = 0; i < batchsize; i++){
                     newLeft = (Batch) left.next();
                     if(newLeft != null){
