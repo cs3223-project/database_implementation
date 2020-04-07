@@ -115,9 +115,11 @@ public class HashJoin extends Join {
 
         outbatch = new Batch(batchSize);
 
+        /** Partition the right and left tables **/
         leftHashTable = leftHasher.partitionLeftTable(leftIndex);
         rightHashTable = rightHasher.partitionRightTable(rightIndex);
 
+        /** Put all search keys into list to, used to probe same tuple**/
         if (!checkKeySet) {
             searchKeyList = new ArrayList<>();
             for(Object hashKey : leftHashTable.keySet()){
@@ -129,7 +131,7 @@ public class HashJoin extends Join {
 
         /**
          * Probing phase
-         * Partition the left relation and build a hashmap using the final hashfunction
+         * Partition the left relation and build a hashmap using the final SDBMHash fn
          * and probe the hashmap with the right relation
          */
         while (!outbatch.isFull() && kcurs < searchKeyList.size()) {
