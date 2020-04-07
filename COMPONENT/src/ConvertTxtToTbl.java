@@ -18,13 +18,13 @@ public class ConvertTxtToTbl {
     public static void main(String[] args) throws IOException {
         // check the arguments
         if (args.length != 1) {
-            System.out.println("usage: java ConvertTxtToTbl <tablename> \n creats <tablename>.tbl files");
+            System.out.println("usage: java ConvertTxtToTbl <tablename> \n creates <tablename>.tbl files");
             System.exit(1);
         }
 
         if (args[0].compareTo("ALL") == 0) {
 
-            String[] tbls = {"BILL", "CART", "CUSTOMER", "CARTDETAILS"};
+            String[] tbls = {"FLIGHTS", "AIRCRAFTS", "SCHEDULE", "CERTIFIED", "EMPLOYEES"};
 
             for (String s : tbls) {
                 String tblname = s;
