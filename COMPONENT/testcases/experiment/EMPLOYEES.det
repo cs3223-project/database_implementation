@@ -1,0 +1,5 @@
+3
+28
+eid INTEGER 15001 PK 4
+ename STRING 10 NK 20
+salary INTEGER 5000 NK 4
