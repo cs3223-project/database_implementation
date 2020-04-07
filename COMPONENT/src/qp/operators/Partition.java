@@ -4,97 +4,125 @@ import qp.utils.Batch;
 import qp.utils.Schema;
 import qp.utils.Tuple;
 
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 public class Partition {
     int batchSize;
-    int mod; // num of hash bucket
-    boolean eos; // end of input
+    boolean eos;                                    // End of input stream
     Schema schema;
-    String partitionFileName;
     Operator table;
-    List<String> fileNames;
+    String currTable;                               // Name of current working table
+    HashMap<Object, ArrayList<Tuple>> partition;    // HashMap partition to be returned
+    ObjectInputStream in;                           // Read temp file for right partition
 
-    public Partition(Operator table, int numBuff, String name){
+    public Partition(Operator table, String name, HashMap<Object, ArrayList<Tuple>> hashTable) {
         this.table = table;
-        this.mod = numBuff;
-        this.partitionFileName = name;
         this.schema = table.getSchema();
-        fileNames = new ArrayList<>();
+        this.currTable = name;
+        partition = hashTable;
         eos = false;
     }
 
-    public List<String> partitionTable(int attrIndex){
+    public HashMap<Object, ArrayList<Tuple>> partitionLeftTable(int attrIndex) {
         int tupleSize = schema.getTupleSize();
         batchSize = Batch.getPageSize() / tupleSize;
         Batch tempBuffer;
 
-        Batch[] parBuffer = new Batch[mod];
-        for(int i = 0; i < parBuffer.length; i++){
-            parBuffer[i] = new Batch(batchSize);
-        }
-
-        ObjectOutputStream[] outFiles = new ObjectOutputStream[mod];
-
-        // 1 partition 1 output file
-        for(int partitionIndex = 0; partitionIndex < parBuffer.length; partitionIndex++){
-            try{
-                fileNames.add(partitionIndex, (partitionFileName + partitionIndex));
-                outFiles[partitionIndex] = new ObjectOutputStream(new FileOutputStream(fileNames.get(partitionIndex)));
-            }catch (Exception e){
-                System.err.println("HashJoin: Writing temporary files failed.");
-                System.exit(1);
-            }
-        }
-
         // read a page of table and split into partitions
-        while(!eos){
+        while (!eos) {
             tempBuffer = table.next();
 
             // put tuples into corresponding partition buffers
             Tuple record;
-            int index;
+            int index = 0;
 
-            if(tempBuffer != null) {
+            //System.out.println("Start partition " + currTable);
+            while (tempBuffer != null) {
                 for (int i = 0; i < tempBuffer.size(); i++) {
+                    //index++;
                     record = tempBuffer.get(i);
-                    index = Integer.valueOf((Integer) record.dataAt(attrIndex)) % mod;
-                    parBuffer[index].add(record);
-
-                    //if full, write out
-                    if (parBuffer[index].isFull()) {
-                        try {
-                            outFiles[index].writeObject(parBuffer[index]);
-                        } catch (Exception e) {
-                            System.err.println("HashJoin: Writing to temporary file failed.");
-                            System.exit(1);
-                        }
-                        parBuffer[index] = new Batch(batchSize);
+                    int hashKey = hashFunc(record.dataAt(attrIndex));
+                    if(partition.containsKey(hashKey)){
+                        partition.get(hashKey).add(record);
+                    } else {
+                        ArrayList<Tuple> tupleList = new ArrayList<>();
+                        tupleList.add(record);
+                        partition.put(hashKey, tupleList);
                     }
                 }
+                tempBuffer = table.next();
             }
-
-            // end of table, output all
-            if(tempBuffer == null){
-                eos = true;
-                // write out all non-empty buffers
-                for(int i = 0; i < mod; i++){
-                    try{
-                        if(!parBuffer[i].isEmpty()){
-                            outFiles[i].writeObject(parBuffer[i]);
-                        }
-                        outFiles[i].close();
-                    }catch (Exception e){
-                        System.err.print(e.toString());
-                        System.exit(1);
-                    }
-                }
-                return fileNames;
-            }
+            //System.out.println("Finished Patitioning " + currTable);
+            eos = true;
         }
-        return fileNames;
+        return partition;
+    }
+
+    public HashMap<Object, ArrayList<Tuple>> partitionRightTable(int attrIndex) {
+        int tupleSize = schema.getTupleSize();
+        batchSize = Batch.getPageSize() / tupleSize;
+        Batch tempBuffer;
+        Tuple record;
+        int index = 0;
+
+        // read a page of table and split into partitions
+        while (!eos) {
+            try {
+                in = new ObjectInputStream(new FileInputStream(currTable));
+                //System.out.println("Start partitioning right table");
+            } catch (Exception io){
+                System.err.println("HashJoin: error reading file");
+                System.exit(1);
+            }
+            try{
+                tempBuffer = (Batch) in.readObject();
+                while (tempBuffer != null) {
+                    for (int i = 0; i < tempBuffer.size(); i++) {
+                        //index++;
+                        record = tempBuffer.get(i);
+                        int hashKey = hashFunc(record.dataAt(attrIndex));
+                        if(partition.containsKey(hashKey)){
+                            partition.get(hashKey).add(record);
+                        } else {
+                            ArrayList<Tuple> tupleList = new ArrayList<>();
+                            tupleList.add(record);
+                            partition.put(hashKey, tupleList);
+                        }
+                    }
+                    tempBuffer = (Batch) in.readObject();
+                }
+            }catch (EOFException e) {
+                try {
+                    in.close();
+                } catch (IOException io) {
+                    System.out.println("HashJoin:Error in temporary file reading");
+                }
+                eos = true;
+            } catch (ClassNotFoundException c) {
+                System.out.println("HashJoin:Some error in deserialization ");
+                System.exit(1);
+            } catch (IOException io) {
+                System.out.println("HashJoin:temporary file reading error");
+                System.exit(1);
+            }
+            eos = true;
+            //System.out.println("Right Table is partitioned " + currTable);
+        }
+        return partition;
+    }
+
+    /* djb2
+     * This algorithm was first reported by Dan Bernstein
+     * many years ago in comp.lang.c
+     */
+    protected int hashFunc(Object o) {
+        int hash = 5381;
+        int len = String.valueOf(o).length();
+        for(int i = 0; i < len; ++i){
+            hash = 33* hash + String.valueOf(o).charAt(i);
+        }
+        return hash;
     }
 }
