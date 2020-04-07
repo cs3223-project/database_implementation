@@ -140,7 +140,7 @@ public class BlockNestedLoop extends Join {
      * * And returns a page of output tuples
      **/
     public Batch next() {
-        System.out.println("BlockNestedJoin:========================in next=======================");
+        //System.out.println("BlockNestedJoin:========================in next=======================");
         int i, j;
         if (eosl) {
             return null;
@@ -244,12 +244,6 @@ public class BlockNestedLoop extends Join {
      * Close the operator
      */
     public boolean close() {
-        /*File dirr = new File(".");
-        File[] files = dirr.listFiles();
-        for(int i = 0; i<files.length; i++) {
-            if (files[i].getName().startsWith(prefix))
-                files[i].delete();
-        }*/
         File f = new File(rfname);
         f.delete();
         return true;
