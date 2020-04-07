@@ -15,7 +15,7 @@ public class OrderBy extends Operator {
 
     private Operator base;
     private List<OrderType> orderByTypeList;
-    private int buffers = 0;
+    private int buffers;
     private int tupleByteSize;
     private int batchRecordSize; // per page
     private Comparator<Tuple> tupleComparator;
@@ -49,7 +49,6 @@ public class OrderBy extends Operator {
     }
 
     public int getPages() {
-        assert pages != 0;
         return pages;
     }
 
@@ -129,7 +128,7 @@ public class OrderBy extends Operator {
 
         if (current != null) {
             List<Batch> toRun = new ArrayList<>();
-            for (int i = 0; i < buffers; i++) {
+            for (int n = 0; n < buffers; n++) {
                 initTupleSize += current.size();
                 toRun.add(current);
                 current = base.next();
@@ -153,25 +152,25 @@ public class OrderBy extends Operator {
      * @return the completed sorted run with the list of batches
      */
     private List<Batch> createSortedRun(List<Batch> toRun) {
-        List<Tuple> tuples = new ArrayList<>();
-        for (Batch b : toRun) {
-            addTuplesFromBatch(tuples, b);
+        List<Tuple> tuples = new ArrayList<>(); // all tuples to be sorted
+        List<Batch> runBatch = new ArrayList<>(); // create batch of main memory size
+
+        for (int i = 0; i < toRun.size(); i++) {
+            addTuplesFromBatch(tuples, toRun.get(i));
         }
         Collections.sort(tuples, tupleComparator);
 
-        // create batch of main memory size
-        List<Batch> runBatch = new ArrayList<>();
-        Batch current = new Batch(batchRecordSize);
+        Batch batch = new Batch(batchRecordSize);
         for (Tuple t : tuples) {
-            current.add(t);
-            if (current.isFull()) {
-                runBatch.add(current);
-                current = new Batch(batchRecordSize);
+            batch.add(t);
+            if (batch.isFull()) {
+                runBatch.add(batch);
+                batch = new Batch(batchRecordSize);
             }
         }
 
-        if (!current.isFull()) {
-            runBatch.add(current);
+        if (!batch.isFull()) {
+            runBatch.add(batch);
         }
 
         return runBatch;
@@ -294,8 +293,7 @@ public class OrderBy extends Operator {
                 }
 
                 Tuple tuple = batch.get(ptr);
-                boolean isTupleSmallest = tupleComparator.compare(tuple, smallest) < 0;
-                if (smallest == null || isTupleSmallest) {
+                if (smallest == null || tupleComparator.compare(tuple, smallest) < 0) {
                     smallest = tuple;
                     smallestIndex = i;
                 }
@@ -305,6 +303,7 @@ public class OrderBy extends Operator {
                 break;
             }
 
+            // updating smallest index and pointers
             batchPointers[smallestIndex] += 1;
             if (batchPointers[smallestIndex] == inBuffers.get(smallestIndex).capacity()) {
                 ObjectInputStream ois = inStreams.get(smallestIndex);
@@ -318,15 +317,7 @@ public class OrderBy extends Operator {
             outBuffers.add(smallest);
             processedTuples++;
 
-            if (outBuffers.isFull()) {
-                if (mergedFile == null) {
-                    mergedFile = writeRunToFile(Arrays.asList(outBuffers));
-                } else {
-                    appendRunToFile(outBuffers, mergedFile);
-                }
-            }
-
-            if (!outBuffers.isEmpty()) {
+            if (outBuffers.isFull() || !outBuffers.isEmpty()) {
                 if (mergedFile == null) {
                     mergedFile = writeRunToFile(Arrays.asList(outBuffers));
                 } else {

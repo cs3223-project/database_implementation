@@ -27,6 +27,7 @@ public class OrderByComparator implements Comparator<Tuple> {
             OrderType toSortBy = orderTypeList.get(i);
             Attribute attr = toSortBy.getAttribute();
             int attrIndex = schema.indexOf(attr);
+            assert attrIndex != -1 : "Attribute not found: " + attr.toString();
             int comparison = Tuple.compareTuples(tuple1, tuple2, attrIndex);
             if (comparison != 0) {
                 int mult;
