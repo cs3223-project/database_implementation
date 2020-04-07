@@ -122,7 +122,7 @@ public class RandomOptimizer {
      **/
 
     static double FINAL_T = 0.5;
-    static final double ALPHA = 0.90;
+    static final double ALPHA = 0.93;
 
     public Operator getOptimizedPlan() {
 
@@ -135,7 +135,7 @@ public class RandomOptimizer {
         /** NUMITER is number of times random restart **/
         int NUMITER;
         if (numJoin != 0) {
-            NUMITER = 2 * numJoin; //
+            NUMITER = 2 * numJoin;
         } else {
             NUMITER = 1;
         }
@@ -149,10 +149,7 @@ public class RandomOptimizer {
             long initCost = pc.getCost(initPlan);
             System.out.println(initCost);
 
-
-            double initTemp = initCost;
-            double currTemp = initTemp;
-
+            double currTemp = initCost;
 
             long minNeighborCost = initCost;   //just initialization purpose;
             Operator minNeighbor = initPlan;  //just initialization purpose;
