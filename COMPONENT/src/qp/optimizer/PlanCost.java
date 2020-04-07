@@ -164,11 +164,11 @@ public class PlanCost {
 
         switch (joinType) {
             case JoinType.NESTEDJOIN:
-                joincost = leftpages + (leftpages * rightpages); //Corrected formula
+                joincost = Math.min(leftpages, rightpages) + (leftpages * rightpages); //Corrected formula
                 break;
             case JoinType.BLOCKNESTED:
                 long iterCount = ((long) Math.ceil(1.0 * Math.min(rightpages, leftpages) / (numbuff-2)));
-                joincost = iterCount * Math.max(leftpages, rightpages);
+                joincost = Math.min(leftpages, rightpages) + iterCount * Math.max(leftpages, rightpages);
                 break;
             case JoinType.HASHJOIN:
                 joincost = 3 * leftpages + 3 * rightpages;
