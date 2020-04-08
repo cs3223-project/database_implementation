@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class HashJoin extends Join {
-    int batchSize;          // number of tuple in each outbatch
+    int batchSize;          // Number of tuple in each outbatch
 
     int leftIndex;          // Index of the join att in left table
     int rightIndex;         // Index of the join att in right table
@@ -64,7 +64,6 @@ public class HashJoin extends Join {
         rightHashTable = new HashMap<>();
         probingHashTable = new HashMap<>();
 
-        /** Init curs input buffer **/
         lcurs = 0;
         rcurs = 0;
         kcurs = 0;
@@ -107,6 +106,8 @@ public class HashJoin extends Join {
         int left;
         int right;
         int key;
+        ArrayList<Tuple> leftTupleList;
+        ArrayList<Tuple> rightTupleList;
 
         if(checkHashJoin){
             close();
@@ -115,11 +116,9 @@ public class HashJoin extends Join {
 
         outbatch = new Batch(batchSize);
 
-        /** Partition the right and left tables **/
         leftHashTable = leftHasher.partitionLeftTable(leftIndex);
         rightHashTable = rightHasher.partitionRightTable(rightIndex);
 
-        /** Put all search keys into list to, used to probe same tuple**/
         if (!checkKeySet) {
             searchKeyList = new ArrayList<>();
             for(Object hashKey : leftHashTable.keySet()){
@@ -128,67 +127,48 @@ public class HashJoin extends Join {
             checkKeySet = true;
         }
 
-
-        /**
-         * Probing phase
-         * Partition the left relation and build a hashmap using the final SDBMHash fn
-         * and probe the hashmap with the right relation
-         */
         while (!outbatch.isFull() && kcurs < searchKeyList.size()) {
             while((key = kcurs) < searchKeyList.size()) {
                 Object searchKey = searchKeyList.get(key++);
                 if (rightHashTable.containsKey(searchKey)) {
-                    ArrayList<Tuple> leftTupleList = leftHashTable.get(searchKey);
-                    ArrayList<Tuple> rightTupleList = rightHashTable.get(searchKey);
-                    /**
-                     * build a hash table for the partition using final hash function
-                     */
+                    leftTupleList = leftHashTable.get(searchKey);
+                    rightTupleList = rightHashTable.get(searchKey);
+
                     if (!build) {
-                        //System.out.println("Building partition using searchKey: " + searchKey);
                         for (int i = 0; i < leftTupleList.size(); i++) {
                             Tuple leftTuple = leftTupleList.get(i);
                             int leftHash = SDBMHash(leftTuple.dataAt(leftIndex));
                             if (probingHashTable.containsKey(leftHash)) {
                                 probingHashTable.get(leftHash).add(leftTuple);
                             } else {
-                                ArrayList<Tuple> probeLeftList = new ArrayList<Tuple>();
+                                ArrayList<Tuple> probeLeftList = new ArrayList<>();
                                 probeLeftList.add(leftTuple);
                                 probingHashTable.put(leftHash, probeLeftList);
                             }
                         }
                         build = true;
-                        //System.out.println("build completed");
                     }
 
                     while((right = rcurs) < rightTupleList.size()) {
                         Tuple rightTuple = rightTupleList.get(right++);
-                        /**
-                         * hash the right tuple with the final hash function and check for matches
-                         * if there is matches, then all the tuples in the hashMap will be joined
-                         * with the tuple tuple using the hashKey
-                         */
                         int rightHash = SDBMHash(rightTuple.dataAt(rightIndex));
                         if (probingHashTable.containsKey(rightHash)) {
                             ArrayList<Tuple> probeLeftList = probingHashTable.get(rightHash);
                             for(left = lcurs; left < probeLeftList.size(); left++){
                                 Tuple leftTuple = probeLeftList.get(left);
                                 Tuple outputTuple = leftTuple.joinWith(rightTuple);
-                                //Debug.PPrint(outputTuple);
                                 outbatch.add(outputTuple);
 
                                 if (outbatch.isFull()) {
-                                    //case 1
                                     if (left == probeLeftList.size() - 1 && right == rightTupleList.size()) {
                                         kcurs = key;
                                         lcurs = 0;
                                         rcurs = 0;
                                         build = false;
                                         probingHashTable.clear();
-                                        //case 2
                                     } else if (right != rightTupleList.size() && left == probeLeftList.size() - 1) {
                                         rcurs = right;
                                         lcurs = 0;
-                                        //other case
                                     } else {
                                         lcurs = left + 1;
                                     }
@@ -200,23 +180,15 @@ public class HashJoin extends Join {
                         lcurs = 0;
                     }
                 }
-                kcurs++;
-                lcurs = 0;
-                rcurs = 0;
-                build = false;
+                moveCurs();
                 probingHashTable.clear();
             }
         }
-        kcurs++;
-        lcurs = 0;
-        rcurs = 0;
-        build = false;
+        moveCurs();
         probingHashTable.clear();
 
-        //if all searchKey is exhausted, the join is completed with no more tuples to compare
-        if (kcurs >= searchKeyList.size()) {
-            checkHashJoin = true;
-        }
+        checkHashJoin = (kcurs >= searchKeyList.size()) ? true : false;
+
         return outbatch;
     }
 
@@ -227,6 +199,13 @@ public class HashJoin extends Join {
             hash = obj.charAt(i) + (hash << 6) + (hash << 16) - hash;
         }
         return hash;
+    }
+
+    public void moveCurs(){
+        kcurs++;
+        lcurs = 0;
+        rcurs = 0;
+        build = false;
     }
 
     public boolean close(){
