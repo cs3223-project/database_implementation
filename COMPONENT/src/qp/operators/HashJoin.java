@@ -187,7 +187,7 @@ public class HashJoin extends Join {
         moveCurs();
         probingHashTable.clear();
 
-        checkHashJoin = (kcurs >= searchKeyList.size()) ? true : false;
+        checkHashJoin = kcurs >= searchKeyList.size();
 
         return outbatch;
     }
