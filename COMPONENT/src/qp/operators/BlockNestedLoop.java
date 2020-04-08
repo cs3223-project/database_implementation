@@ -123,18 +123,22 @@ public class BlockNestedLoop extends Join {
             if (lcurs == 0 && eosr == true) {
                 /** new left block is to be fetched**/
                 leftbatch = new ArrayList<>();
-                
-                for(i = 0; i < batchsize; i++){
-                    newLeft = (Batch) left.next();
+
+                i = 0;
+                while(i < batchsize){
+                    newLeft = left.next();
                     if(newLeft != null){
                         leftbatch.add(newLeft);
                     }
+                    i = i + 1;
                 }
 
                 lTuplesInCurrBlk = new ArrayList<>();
                 for(Batch page : leftbatch){
-                    for(i = 0; i < page.size(); i++){
+                    i = 0;
+                    while(i < page.size()){
                         lTuplesInCurrBlk.add(page.get(i));
+                        i++;
                     }
                 }
 
