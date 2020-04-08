@@ -170,27 +170,27 @@ public class HashJoin extends Join {
                         int rightHash = SDBMHash(rightTuple.dataAt(rightIndex));
                         if (probingHashTable.containsKey(rightHash)) {
                             ArrayList<Tuple> probeLeftList = probingHashTable.get(rightHash);
-                            while((left = lcurs) < probeLeftList.size()) {
-                                Tuple leftTuple = probeLeftList.get(left++);
+                            for(left = lcurs; left < probeLeftList.size(); left++){
+                                Tuple leftTuple = probeLeftList.get(left);
                                 Tuple outputTuple = leftTuple.joinWith(rightTuple);
                                 //Debug.PPrint(outputTuple);
                                 outbatch.add(outputTuple);
 
                                 if (outbatch.isFull()) {
                                     //case 1
-                                    if (left == probeLeftList.size() && right == rightTupleList.size()) {
+                                    if (left == probeLeftList.size() - 1 && right == rightTupleList.size()) {
                                         kcurs = key;
                                         lcurs = 0;
                                         rcurs = 0;
                                         build = false;
                                         probingHashTable.clear();
                                         //case 2
-                                    } else if (right != rightTupleList.size() && left == probeLeftList.size()) {
+                                    } else if (right != rightTupleList.size() && left == probeLeftList.size() - 1) {
                                         rcurs = right;
                                         lcurs = 0;
                                         //other case
                                     } else {
-                                        lcurs = left;
+                                        lcurs = left + 1;
                                     }
                                     return outbatch;
                                 }
