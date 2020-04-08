@@ -36,8 +36,7 @@ public class Partition {
 
             // put tuples into corresponding partition buffers
             Tuple record;
-
-            //System.out.println("Start partition " + currTable);
+            
             while (tempBuffer != null) {
                 for (int i = 0; i < tempBuffer.size(); i++) {
                     record = tempBuffer.get(i);
@@ -52,7 +51,6 @@ public class Partition {
                 }
                 tempBuffer = table.next();
             }
-            //System.out.println("Finished Patitioning " + currTable);
             eos = true;
         }
         return partition;
@@ -68,7 +66,6 @@ public class Partition {
         while (!eos) {
             try {
                 in = new ObjectInputStream(new FileInputStream(currTable));
-                //System.out.println("Start partitioning right table");
             } catch (Exception io){
                 System.err.println("HashJoin: error reading file");
                 System.exit(1);
@@ -93,18 +90,17 @@ public class Partition {
                 try {
                     in.close();
                 } catch (IOException io) {
-                    System.out.println("HashJoin:Error in temporary file reading");
+                    System.out.println(io.toString());
                 }
                 eos = true;
             } catch (ClassNotFoundException c) {
-                System.out.println("HashJoin:Some error in deserialization ");
+                System.out.println(c.toString());
                 System.exit(1);
             } catch (IOException io) {
-                System.out.println("HashJoin:temporary file reading error");
+                System.out.println(io.toString());
                 System.exit(1);
             }
             eos = true;
-            //System.out.println("Right Table is partitioned " + currTable);
         }
         return partition;
     }
