@@ -160,8 +160,8 @@ public class HashJoin extends Join {
                         //System.out.println("build completed");
                     }
 
-                    for (right = rcurs; right < rightTupleList.size(); right++) {
-                        Tuple rightTuple = rightTupleList.get(right);
+                    while((right = rcurs) < rightTupleList.size()) {
+                        Tuple rightTuple = rightTupleList.get(right++);
                         /**
                          * hash the right tuple with the final hash function and check for matches
                          * if there is matches, then all the tuples in the hashMap will be joined
@@ -170,27 +170,27 @@ public class HashJoin extends Join {
                         int rightHash = SDBMHash(rightTuple.dataAt(rightIndex));
                         if (probingHashTable.containsKey(rightHash)) {
                             ArrayList<Tuple> probeLeftList = probingHashTable.get(rightHash);
-                            for (left = lcurs; left < probeLeftList.size(); left++) {
-                                Tuple leftTuple = probeLeftList.get(left);
+                            while((left = lcurs) < probeLeftList.size()) {
+                                Tuple leftTuple = probeLeftList.get(left++);
                                 Tuple outputTuple = leftTuple.joinWith(rightTuple);
                                 //Debug.PPrint(outputTuple);
                                 outbatch.add(outputTuple);
 
                                 if (outbatch.isFull()) {
-                                    //case 1 probeList and right partition exhausted,
-                                    if (left == probeLeftList.size() - 1 && right == rightTupleList.size() - 1) {
+                                    //case 1
+                                    if (left == probeLeftList.size() && right == rightTupleList.size()) {
                                         kcurs = key;
                                         lcurs = 0;
                                         rcurs = 0;
                                         build = false;
                                         probingHashTable.clear();
-                                        //case 2 right partition is not probed completely;
-                                    } else if (right != rightTupleList.size() - 1 && left == probeLeftList.size() - 1) {
-                                        rcurs = right + 1;
+                                        //case 2
+                                    } else if (right != rightTupleList.size() && left == probeLeftList.size()) {
+                                        rcurs = right;
                                         lcurs = 0;
-                                        //other case where probeList is not probed completely against the right tuple
+                                        //other case
                                     } else {
-                                        lcurs = left + 1;
+                                        lcurs = left;
                                     }
                                     return outbatch;
                                 }

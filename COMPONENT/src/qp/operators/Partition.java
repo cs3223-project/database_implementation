@@ -36,12 +36,10 @@ public class Partition {
 
             // put tuples into corresponding partition buffers
             Tuple record;
-            int index = 0;
 
             //System.out.println("Start partition " + currTable);
             while (tempBuffer != null) {
                 for (int i = 0; i < tempBuffer.size(); i++) {
-                    //index++;
                     record = tempBuffer.get(i);
                     int hashKey = hashFunc(record.dataAt(attrIndex));
                     if(partition.containsKey(hashKey)){
@@ -65,7 +63,6 @@ public class Partition {
         batchSize = Batch.getPageSize() / tupleSize;
         Batch tempBuffer;
         Tuple record;
-        int index = 0;
 
         // read a page of table and split into partitions
         while (!eos) {
@@ -80,7 +77,6 @@ public class Partition {
                 tempBuffer = (Batch) in.readObject();
                 while (tempBuffer != null) {
                     for (int i = 0; i < tempBuffer.size(); i++) {
-                        //index++;
                         record = tempBuffer.get(i);
                         int hashKey = hashFunc(record.dataAt(attrIndex));
                         if(partition.containsKey(hashKey)){
