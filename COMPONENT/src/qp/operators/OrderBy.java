@@ -286,10 +286,15 @@ public class OrderBy extends Operator {
         while (true) {
             Tuple smallest = null;
             int smallestIndex = 0;
-            for (int i = 0; i < inBuffers.size(); i++) {
+
+            int batchInBufferSize = inBuffers.size();
+            int i = 0;
+
+            while (i < batchInBufferSize) {
                 Batch batch = inBuffers.get(i);
                 int ptr = batchPointers[i];
                 if (batchPointers[i] >= batch.size()) {
+                    i++;
                     continue;
                 }
 
@@ -298,6 +303,7 @@ public class OrderBy extends Operator {
                     smallest = tuple;
                     smallestIndex = i;
                 }
+                i++;
             }
 
             if (smallest == null) {
