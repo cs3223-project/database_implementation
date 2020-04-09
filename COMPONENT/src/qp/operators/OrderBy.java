@@ -128,7 +128,8 @@ public class OrderBy extends Operator {
 
         if (current != null) {
             List<Batch> toRun = new ArrayList<>();
-            for (int n = 0; n < buffers; n++) {
+            int buffNo = 0;
+            while (buffNo < buffers) {
                 initTupleSize += current.size();
                 toRun.add(current);
                 current = base.next();
@@ -182,9 +183,12 @@ public class OrderBy extends Operator {
      * @param batch to retrieve the tuples for adding
      */
     private void addTuplesFromBatch(List<Tuple> addToTuples, Batch batch) {
-        for (int i = 0; i < batch.size(); i++) {
+        int batchSize = batch.size();
+        int i = 0;
+        while (i < batchSize) {
             Tuple t = batch.get(i);
             addToTuples.add(t);
+            i++;
         }
     }
 
@@ -222,18 +226,19 @@ public class OrderBy extends Operator {
             int numRuns = sortedRuns.size();
             List<File> newSortedRuns = new ArrayList<>();
 
-            for (int r = 0; r * availBuffers < numRuns; r++) {
-                int start = r * availBuffers;
-                int end = (r + 1) * availBuffers;
+            int runNo = 0;
+            while (runNo * availBuffers < numRuns) {
+                int start = runNo * availBuffers;
+                int end = (runNo + 1) * availBuffers;
                 end = Math.min(end, numRuns);
 
                 List<File> runsToMerge = sortedRuns.subList(start, end);
                 File merged = mergeSortedRuns(runsToMerge);
                 newSortedRuns.add(merged);
+                runNo++;
             }
 
             runNo++;
-            assert initTupleSize == processedTuples;
             refreshRuns(sortedRuns);
             sortedRuns = newSortedRuns;
         }
