@@ -260,7 +260,7 @@ public class OrderBy extends Operator {
             try {
                 ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f));
                 inputStreams.add(ois);
-            } catch (FileNotFoundException | IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
