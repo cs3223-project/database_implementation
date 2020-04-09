@@ -17,6 +17,7 @@ public class QueryMain {
 
     static PrintWriter out;
     static int numAtts;
+    static int numBuffs;
 
     public static void main(String[] args) {
         if (args.length < 2) {
@@ -28,11 +29,24 @@ public class QueryMain {
         Batch.setPageSize(getPageSize(args, in));
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
-        configureBufferManager(sqlquery.getNumJoin(), args, in);
+        numBuffs = configureBufferManager(sqlquery.getNumJoin(), args, in);
 
         Operator root = getQueryPlan(sqlquery);
         printFinalPlan(root, args, in);
         executeQuery(root, args[1]);
+        deleteAllTempFiles();
+    }
+
+    /**
+     * Delete temp files
+     **/
+    private static void deleteAllTempFiles(){
+        File dirr = new File(".");
+        File[] files = dirr.listFiles();
+        for(int i = 0; i<files.length; i++) {
+            if (files[i].getName().contains("temp"))
+                files[i].delete();
+        }
     }
 
     /**
@@ -86,7 +100,7 @@ public class QueryMain {
      * If there are joins then assigns buffers to each join operator while preparing the plan.
      * As buffer manager is not implemented, just input the number of buffers available.
      **/
-    private static void configureBufferManager(int numJoin, String[] args, BufferedReader in) {
+    private static int configureBufferManager(int numJoin, String[] args, BufferedReader in) {
         if (numJoin != 0) {
             int numBuff = 1000;
             if (args.length < 4) {
@@ -97,7 +111,9 @@ public class QueryMain {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else numBuff = Integer.parseInt(args[3]);
+            } else {
+                numBuff = Integer.parseInt(args[3]);
+            }
             BufferManager bm = new BufferManager(numBuff, numJoin);
         }
 
@@ -107,6 +123,8 @@ public class QueryMain {
             System.out.println("Minimum 3 buffers are required per join operator ");
             System.exit(1);
         }
+
+        return numBuff;
     }
 
     /**
@@ -115,7 +133,7 @@ public class QueryMain {
     public static Operator getQueryPlan(SQLQuery sqlquery) {
         Operator root = null;
 
-        RandomOptimizer optimizer = new RandomOptimizer(sqlquery);
+        RandomOptimizer optimizer = new RandomOptimizer(sqlquery, numBuffs);
         Operator planroot = optimizer.getOptimizedPlan();
 
         if (planroot == null) {

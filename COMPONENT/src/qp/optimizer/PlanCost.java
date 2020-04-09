@@ -63,7 +63,6 @@ public class PlanCost {
         return numtuple;
     }
 
-
     /**
      * Returns number of tuples in the root
      **/
@@ -76,10 +75,34 @@ public class PlanCost {
             return getStatistics((Project) node);
         } else if (node.getOpType() == OpType.SCAN) {
             return getStatistics((Scan) node);
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            return getStatistics((Distinct) node);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return getStatistics((OrderBy) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
         return 0;
+    }
+
+    private long getStatistics(OrderBy node) {
+        // ToDo
+        int numBuffs = node.getBuffers();
+        int numPages = node.getPages();
+        int numPasses = 1 + (int) Math.ceil(Math.log(Math.ceil(numPages / (1.0 * numBuffs))) / Math.log(numPages -1));
+        cost += 2 * numPages * numPasses;
+
+        return calculateCost(node.getBase());
+    }
+
+    /**
+     * Calculates statistics and cost of Distinct operation
+     **/
+    protected long getStatistics(Distinct node) {
+        // ToDo
+        long tuples = calculateCost(node.getBase());
+        cost = 3 * tuples;
+        return calculateCost(node.getBase());
     }
 
     /**
@@ -141,7 +164,14 @@ public class PlanCost {
 
         switch (joinType) {
             case JoinType.NESTEDJOIN:
-                joincost = leftpages * rightpages;
+                joincost = leftpages + (leftpages * rightpages); //Corrected formula
+                break;
+            case JoinType.BLOCKNESTED:
+                long iterCount = ((long) Math.ceil(1.0 * Math.min(rightpages, leftpages) / (numbuff-2)));
+                joincost = leftpages + iterCount * rightpages;
+                break;
+            case JoinType.HASHJOIN:
+                joincost = 3 * leftpages + 3 * rightpages;
                 break;
             default:
                 System.out.println("join type is not supported");
@@ -268,14 +298,3 @@ public class PlanCost {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-

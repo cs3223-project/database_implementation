@@ -5,6 +5,7 @@
 package qp.optimizer;
 
 import qp.operators.*;
+import qp.operators.BlockNestedLoop;
 import qp.utils.Attribute;
 import qp.utils.Condition;
 import qp.utils.RandNumb;
@@ -33,8 +34,9 @@ public class RandomOptimizer {
      * constructor
      **/
 
-    public RandomOptimizer(SQLQuery sqlquery) {
+    public RandomOptimizer(SQLQuery sqlquery, int numBuffers) {
         this.sqlquery = sqlquery;
+        this.sqlquery.setNumBuffers(numBuffers);
     }
 
     /**
@@ -55,6 +57,19 @@ public class RandomOptimizer {
                     nj.setRight(right);
                     nj.setNumBuff(numbuff);
                     return nj;
+                case JoinType.BLOCKNESTED:
+                    //BlockNestedLoop bnj = new BlockNestedLoop((Join) node);
+                    BlockNestedLoop bnj = new BlockNestedLoop((Join) node);
+                    bnj.setLeft(left);
+                    bnj.setRight(right);
+                    bnj.setNumBuff(numbuff);
+                    return bnj;
+                case JoinType.HASHJOIN:
+                    HashJoin hashJoin = new HashJoin((Join) node);
+                    hashJoin.setLeft(left);
+                    hashJoin.setRight(right);
+                    hashJoin.setNumBuff(numbuff);
+                    return hashJoin;
                 default:
                     return node;
             }
@@ -65,6 +80,14 @@ public class RandomOptimizer {
         } else if (node.getOpType() == OpType.PROJECT) {
             Operator base = makeExecPlan(((Project) node).getBase());
             ((Project) node).setBase(base);
+            return node;
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            Operator base = makeExecPlan(((Distinct) node).getBase());
+            ((Distinct) node).setBase(base);
+            return node;
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            Operator base = makeExecPlan(((OrderBy) node).getBase());
+            ((OrderBy) node).setBase(base);
             return node;
         } else {
             return node;
@@ -95,9 +118,14 @@ public class RandomOptimizer {
     }
 
     /**
-     * Implementation of Iterative Improvement Algorithm for Randomized optimization of Query Plan
+     * Implementation of Simulated Annealing Algorithm AND Iterative Improvement for Randomized optimization of Query Plan
      **/
+
+    static double FINAL_T = 0.5;
+    static final double ALPHA = 0.93;
+
     public Operator getOptimizedPlan() {
+
         /** get an initial plan for the given sql query **/
         RandomInitialPlan rip = new RandomInitialPlan(sqlquery);
         numJoin = rip.getNumJoins();
@@ -112,6 +140,12 @@ public class RandomOptimizer {
             NUMITER = 1;
         }
 
+
+        /** get an initial plan for the given sql query **/
+
+        long MINCOST2 = Long.MAX_VALUE;
+        Operator finalPlan2 = null;
+
         /** Randomly restart the gradient descent until
          *  the maximum specified number of random restarts (NUMITER)
          *  has satisfied
@@ -119,7 +153,7 @@ public class RandomOptimizer {
         for (int j = 0; j < NUMITER; ++j) {
             Operator initPlan = rip.prepareInitialPlan();
             modifySchema(initPlan);
-            System.out.println("-----------initial Plan-------------");
+            System.out.println("-----------initial Plan [II]-------------");
             Debug.PPrint(initPlan);
             PlanCost pc = new PlanCost();
             long initCost = pc.getCost(initPlan);
@@ -130,11 +164,11 @@ public class RandomOptimizer {
             Operator minNeighbor = initPlan;  //just initialization purpose;
             if (numJoin != 0) {
                 while (flag) {  // flag = false when local minimum is reached
-                    System.out.println("---------------while--------");
+                    System.out.println("---------------while [II]--------");
                     Operator initPlanCopy = (Operator) initPlan.clone();
                     minNeighbor = getNeighbor(initPlanCopy);
 
-                    System.out.println("--------------------------neighbor---------------");
+                    System.out.println("--------------------------neighbor [II]---------------");
                     Debug.PPrint(minNeighbor);
                     pc = new PlanCost();
                     minNeighborCost = pc.getCost(minNeighbor);
@@ -147,7 +181,7 @@ public class RandomOptimizer {
                     for (int i = 1; i < 2 * numJoin; ++i) {
                         initPlanCopy = (Operator) initPlan.clone();
                         Operator neighbor = getNeighbor(initPlanCopy);
-                        System.out.println("------------------neighbor--------------");
+                        System.out.println("------------------neighbor [II]--------------");
                         Debug.PPrint(neighbor);
                         pc = new PlanCost();
                         long neighborCost = 0;
@@ -173,21 +207,118 @@ public class RandomOptimizer {
                         flag = false;  // local minimum reached
                     }
                 }
-                System.out.println("------------------local minimum--------------");
+                System.out.println("------------------local minimum [II]--------------");
                 Debug.PPrint(minNeighbor);
                 System.out.println(" " + minNeighborCost);
             }
-            if (minNeighborCost < MINCOST) {
-                MINCOST = minNeighborCost;
-                finalPlan = minNeighbor;
+            if (minNeighborCost < MINCOST2) {
+                MINCOST2 = minNeighborCost;
+                finalPlan2 = minNeighbor;
             }
         }
+
+        // Simulated Annealing
+
+        for (int j = 0; j < NUMITER; ++j) {
+            Operator initPlan = rip.prepareInitialPlan();
+            modifySchema(initPlan);
+            System.out.println("-----------initial Plan [SA]-------------");
+            Debug.PPrint(initPlan);
+            PlanCost pc = new PlanCost();
+            long initCost = pc.getCost(initPlan);
+            System.out.println(initCost);
+
+            double currTemp = initCost;
+
+            long minNeighborCost = initCost;   //just initialization purpose;
+            Operator minNeighbor = initPlan;  //just initialization purpose;
+
+            if (numJoin != 0) {
+                while (currTemp > FINAL_T) {
+                    System.out.println("---------------while [SA]--------");
+                    Operator initPlanCopy = (Operator) initPlan.clone();
+                    minNeighbor = getNeighbor(initPlanCopy);
+
+                    System.out.println("--------------------------neighbor [SA]---------------");
+                    Debug.PPrint(minNeighbor);
+                    pc = new PlanCost();
+                    minNeighborCost = pc.getCost(minNeighbor);
+                    System.out.println("  " + minNeighborCost);
+
+                    /** In this loop we consider from the
+                     ** possible neighbors (randomly selected)
+                     ** and take the minimum among for next step
+                     **/
+                    for (int i = 1; i < NUMITER; ++i) {
+                        initPlanCopy = (Operator) initPlan.clone();
+                        Operator neighbor = getNeighbor(initPlanCopy);
+
+                        System.out.println("------------------neighbor [SA]--------------");
+                        Debug.PPrint(neighbor);
+                        pc = new PlanCost();
+
+                        long neighborCost = 0;
+                        try {
+                            neighborCost = pc.getCost(neighbor);
+                        } catch (Exception e) {
+                            System.out.println("fatal error.");
+                            System.exit(0);
+                        }
+                        System.out.println(neighborCost);
+
+                        long initPlanCopyCost = pc.getCost(initPlanCopy);
+
+                        if (neighborCost < initPlanCopyCost) {
+                            minNeighbor = neighbor;
+                            minNeighborCost = neighborCost;
+                        }
+                        else if (neighborCost > initPlanCopyCost) {
+                            double ap = Math.pow(Math.E, (neighborCost - initPlanCopyCost)/ currTemp);
+                            if ( ap >= Math.random()) {
+                                minNeighbor = neighbor;
+                                minNeighborCost = neighborCost;
+                            }
+                        }
+                        if (minNeighborCost < MINCOST) {
+                            MINCOST = minNeighborCost;
+                            finalPlan = minNeighbor;
+                        }
+                    }
+                    currTemp *= ALPHA;
+                    System.out.println("Simulated Annealing Current Temp = " + currTemp);
+                }
+                System.out.println("------------------local minimum [SA]--------------");
+                Debug.PPrint(minNeighbor);
+                System.out.println(" " + minNeighborCost);
+            }
+        }
+
         System.out.println("\n\n\n");
-        System.out.println("---------------------------Final Plan----------------");
-        Debug.PPrint(finalPlan);
-        System.out.println("  " + MINCOST);
-        return finalPlan;
+//         System.out.println("Simulated Annealing Optimised Cost : " + MINCOST);
+//         System.out.println("Iterative Improvement Optimised Cost : " + MINCOST2);
+
+        if (MINCOST < MINCOST2) {
+//            System.out.println("Simulated Annealing produced better result than Iterative Improvement!");
+            System.out.println("---------------------------Final Plan----------------");
+            Debug.PPrint(finalPlan);
+            System.out.println("  " + MINCOST);
+            return finalPlan;
+        }
+        else if (MINCOST2 < MINCOST){
+//            System.out.println("Iterative Improvement produced better result than Simulated Annealing.");
+            System.out.println("---------------------------Final Plan----------------");
+            Debug.PPrint(finalPlan2);
+            System.out.println("  " + MINCOST2);
+            return finalPlan2;
+        }
+        else {
+            System.out.println("---------------------------Final Plan----------------");
+            Debug.PPrint(finalPlan);
+            System.out.println("  " + MINCOST);
+            return finalPlan;
+        }
     }
+
 
     /**
      * Selects a random method choice for join wiht number joinNum
@@ -362,13 +493,17 @@ public class RandomOptimizer {
             return findNodeAt(((Select) node).getBase(), joinNum);
         } else if (node.getOpType() == OpType.PROJECT) {
             return findNodeAt(((Project) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            return findNodeAt(((Distinct) node).getBase(), joinNum);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return findNodeAt(((OrderBy) node).getBase(), joinNum);
         } else {
             return null;
         }
     }
 
     /**
-     * Modifies the schema of operators which are modified due to selecing an alternative neighbor plan
+     * Modifies the schema of operators which are modified due to selecting an alternative neighbor plan
      **/
     private void modifySchema(Operator node) {
         if (node.getOpType() == OpType.JOIN) {
@@ -386,6 +521,14 @@ public class RandomOptimizer {
             modifySchema(base);
             ArrayList attrlist = ((Project) node).getProjAttr();
             node.setSchema(base.getSchema().subSchema(attrlist));
+        } else if (node.getOpType() == OpType.DISTINCT) {
+            Operator base = ((Distinct) node).getBase();
+            modifySchema(base);
+            node.setSchema(base.getSchema());
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            Operator base = ((OrderBy) node).getBase();
+            modifySchema(base);
+            node.setSchema(base.getSchema());
         }
     }
 }

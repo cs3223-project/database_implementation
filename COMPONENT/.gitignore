@@ -1,4 +1,8 @@
 .idea/
 *.iml
+*.class
 *.classes
 testcases/tables/results
+testcases/experiment/results
+out/
+

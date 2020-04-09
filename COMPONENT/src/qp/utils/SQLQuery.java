@@ -22,6 +22,7 @@ public class SQLQuery {
     ArrayList<Attribute> orderbyList;    // List of attibutes in orderby clause
 
     boolean isDistinct = false;          // Whether distinct key word appeared in select clause
+    static int numBuffers;
 
     public SQLQuery(ArrayList<Attribute> list1, ArrayList<String> list2, ArrayList<Condition> list3) {
         projectList = list1;
@@ -104,13 +105,25 @@ public class SQLQuery {
         return groupbyList;
     }
 
-    public void setOrderByList(ArrayList<Attribute> list) { orderbyList = list; }
+    public void setOrderByList(ArrayList<Attribute> list) {
+        orderbyList = list;
+    }
 
-    public ArrayList<Attribute> getOrderByList() { return orderbyList; }
+    public ArrayList<Attribute> getOrderByList() {
+        return orderbyList;
+    }
 
     public int getNumJoin() {
         if (joinList == null)
             return 0;
         return joinList.size();
+    }
+
+    public int getNumBuffers() {
+        return numBuffers;
+    }
+
+    public static void setNumBuffers(int buffers) {
+        numBuffers = buffers;
     }
 }
