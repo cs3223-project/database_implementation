@@ -136,6 +136,7 @@ public class OrderBy extends Operator {
                 if (current == null) {
                     break;
                 }
+                buffNo++;
             }
 
             // processing the batches to sorted runs
@@ -229,9 +230,7 @@ public class OrderBy extends Operator {
             int runNo = 0;
             while (runNo * availBuffers < numRuns) {
                 int start = runNo * availBuffers;
-                int end = (runNo + 1) * availBuffers;
-                end = Math.min(end, numRuns);
-
+                int end = Math.min((runNo + 1) * availBuffers, numRuns);
                 List<File> runsToMerge = sortedRuns.subList(start, end);
                 File merged = mergeSortedRuns(runsToMerge);
                 newSortedRuns.add(merged);
@@ -248,22 +247,20 @@ public class OrderBy extends Operator {
      * Merge sorted runs into a longer sorted run.
      */
     private File mergeSortedRuns(List<File> runs) {
-        if (runs.isEmpty()) {
-            return null;
-        }
-
         int availBuffers = runs.size();
         List<Batch> inputBuffers = new ArrayList<>();
         List<ObjectInputStream> inputStreams = new ArrayList<>();
+
+        if (runs.isEmpty()) {
+            return null;
+        }
 
         // open sorted runs files and add it to the input stream
         for (File f : runs) {
             try {
                 ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f));
                 inputStreams.add(ois);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+            } catch (FileNotFoundException | IOException e) {
                 e.printStackTrace();
             }
         }
@@ -276,7 +273,6 @@ public class OrderBy extends Operator {
 
         File mergedFile = sortRuns(inputBuffers, inputStreams, availBuffers);
         return mergedFile;
-
     }
 
     /**
@@ -322,7 +318,7 @@ public class OrderBy extends Operator {
             outBuffers.add(smallest);
             processedTuples++;
 
-            if (outBuffers.isFull() || !outBuffers.isEmpty()) {
+            if (!outBuffers.isEmpty() || outBuffers.isFull()) {
                 if (mergedFile == null) {
                     mergedFile = writeRunToFile(Arrays.asList(outBuffers));
                 } else {
